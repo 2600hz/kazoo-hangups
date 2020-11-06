@@ -23,7 +23,7 @@
 %% @doc
 %% @end
 %%------------------------------------------------------------------------------
--spec handle_req(kz_call_event:doc(), kz_term:proplist()) -> 'ok'.
+-spec handle_req(kz_call_event:payload(), kz_term:proplist()) -> 'ok'.
 handle_req(JObj, _Props) ->
     'true' = kapi_call:event_v(JObj),
     HangupCause = kz_call_event:hangup_cause(JObj, <<"unknown">>),
@@ -32,7 +32,7 @@ handle_req(JObj, _Props) ->
         'false' -> alert_about_hangup(HangupCause, JObj)
     end.
 
--spec alert_about_hangup(kz_term:ne_binary(), kz_call_event:doc()) -> 'ok'.
+-spec alert_about_hangup(kz_term:ne_binary(), kz_call_event:payload()) -> 'ok'.
 alert_about_hangup(HangupCause, JObj) ->
     lager:debug("abnormal call termination: ~s", [HangupCause]),
     AccountId = kz_call_event:account_id(JObj, <<"unknown">>),
@@ -52,7 +52,7 @@ alert_about_hangup(HangupCause, JObj) ->
 %% @doc
 %% @end
 %%------------------------------------------------------------------------------
--spec maybe_add_hangup_specific(kz_term:ne_binary(), kz_call_event:doc()) -> kz_term:proplist().
+-spec maybe_add_hangup_specific(kz_term:ne_binary(), kz_call_event:payload()) -> kz_term:proplist().
 maybe_add_hangup_specific(<<"UNALLOCATED_NUMBER">>, JObj) ->
     maybe_add_number_info(JObj);
 maybe_add_hangup_specific(<<"NO_ROUTE_DESTINATION">>, JObj) ->
@@ -64,7 +64,7 @@ maybe_add_hangup_specific(_HangupCause, JObj) ->
 %% @doc
 %% @end
 %%------------------------------------------------------------------------------
--spec maybe_add_number_info(kz_call_event:doc()) -> kz_term:proplist().
+-spec maybe_add_number_info(kz_call_event:payload()) -> kz_term:proplist().
 maybe_add_number_info(JObj) ->
     Destination = find_destination(JObj),
     Props = kz_json:recursive_to_proplist(JObj),
@@ -94,7 +94,7 @@ build_account_tree(AccountId) ->
 %% @doc
 %% @end
 %%------------------------------------------------------------------------------
--spec find_realm(kz_call_event:doc(), kz_term:ne_binary()) -> kz_term:ne_binary().
+-spec find_realm(kz_call_event:payload(), kz_term:ne_binary()) -> kz_term:ne_binary().
 find_realm(JObj, <<_/binary>> = AccountId) ->
     case kz_call_event:account_id(JObj) of
         undefined ->
@@ -109,14 +109,14 @@ find_realm(JObj, <<_/binary>> = AccountId) ->
 %% @doc
 %% @end
 %%------------------------------------------------------------------------------
--spec find_destination(kz_call_event:doc()) -> kz_term:ne_binary().
+-spec find_destination(kz_call_event:payload()) -> kz_term:ne_binary().
 find_destination(JObj) ->
     case catch binary:split(kz_json:get_value(<<"Request">>, JObj), <<"@">>) of
         [Num|_] -> Num;
         _ -> use_to_as_destination(JObj)
     end.
 
--spec use_to_as_destination(kz_call_event:doc()) -> kz_term:ne_binary().
+-spec use_to_as_destination(kz_call_event:payload()) -> kz_term:ne_binary().
 use_to_as_destination(JObj) ->
     AccountId = kz_call_event:account_id(JObj),
     case catch binary:split(kz_json:get_value(<<"To-Uri">>, JObj), <<"@">>) of
@@ -128,7 +128,7 @@ use_to_as_destination(JObj) ->
 %% @doc
 %% @end
 %%------------------------------------------------------------------------------
--spec find_source(kz_call_event:doc()) -> kz_term:ne_binary().
+-spec find_source(kz_call_event:payload()) -> kz_term:ne_binary().
 find_source(JObj) ->
     AccountId = kz_call_event:account_id(JObj),
     case catch binary:split(kz_json:get_value(<<"From-Uri">>, JObj), <<"@">>) of
@@ -140,7 +140,7 @@ find_source(JObj) ->
 %% @doc
 %% @end
 %%------------------------------------------------------------------------------
--spec find_direction(kz_call_event:doc()) -> kz_term:ne_binary().
+-spec find_direction(kz_call_event:payload()) -> kz_term:ne_binary().
 find_direction(JObj) ->
     kz_call_event:call_direction(JObj, <<"unknown">>).
 
